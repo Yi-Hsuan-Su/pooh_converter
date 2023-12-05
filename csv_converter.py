@@ -2,11 +2,11 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 import csv
 import os
+import sys
 import subprocess
 import chardet
 import zipfile
 import windnd
-from pathlib import Path
 
 def detect_encoding(file_path):
     # 嘗試使用 chardet 來檢測編碼
@@ -20,12 +20,14 @@ def detect_encoding(file_path):
         print(f"Error detecting encoding: {e}")
         for encoding in ['latin-1', 'ANSI']:
             try:
-                with open(file_path, 'r', encoding=encoding) as file:
+                with open(file_path, 'r', encoding=encoding, errors='replace') as file:
                     lines = file.readlines()
                 return encoding
             except Exception as e:
                 print(f"Error using {encoding} encoding: {e}")
 
+    # 如果以上嘗試都失敗，返回預設編碼 'utf-8'
+    return 'utf-8'
 
 def on_click_compress(*args):
     if compress_zip_var.get():
@@ -79,7 +81,7 @@ def convert_to_csv(input_paths, remove_duplicates, open_csv, compress_zip):
         if os.path.exists(input_path):
             encoding = detect_encoding(input_path)
 
-            with open(input_path, 'r', encoding=encoding) as file:
+            with open(input_path, 'r', encoding=encoding,errors='replace') as file:
                 lines = file.readlines()
             
             # # 獲取檔案基本名稱
@@ -176,11 +178,11 @@ def on_drop(files):
     path_entry.insert(tk.END, file_paths)
     
 def browse_files():
-    # 打開檔案對話框，並設定初始化目錄
-    file_paths = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
-    # 更新 Entry 中的內容，將所有檔案路徑以分號隔開
+    file_paths = filedialog.askopenfilenames(filetypes=[("Text Files", "*.txt")])
     path_entry.delete(0, tk.END)
-    path_entry.insert(tk.END, ";".join(file_paths))
+
+    for file_path in file_paths:
+        path_entry.insert(tk.END, file_path + ";")
 
 
 def convert_button_clicked():
@@ -205,10 +207,6 @@ def convert_button_clicked():
 
 root = tk.Tk()
 root.title("維尼 作弊程式")
-
-# 使用相對路徑設置視窗圖示
-icon_path = r"C:\Users\123\.spyder-py3\pooh.ico"
-root.iconbitmap(icon_path)
 
 # Entry 元件，用於顯示或輸入檔案路徑
 windnd.hook_dropfiles(root,func=on_drop)
